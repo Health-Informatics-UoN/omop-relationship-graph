@@ -11,6 +11,7 @@ use axum::{
     Json,
 };
 use std::sync::Arc;
+use tower_http::cors::CorsLayer;
 
 #[derive(Clone)]
 struct AppState {
@@ -134,6 +135,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/recursive_relationships/:starting_concept/:max_depth", get(query_relationships))
+        .layer(CorsLayer::permissive())
         .with_state(state);
         
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
