@@ -2,6 +2,19 @@ use sqlx::postgres::PgPoolOptions;
 mod recursive_relationships;
 use recursive_relationships::RelationshipDetails;
 
+use axum::{
+    routing::get,
+    Router,
+    extract::{State, Path},
+    Json,
+};
+use std::net::SocketAddr;
+use std::sync::Arc;
+
+#[derive(Clone)]
+struct AppState {
+    pool: sqlx::PgPool,
+}
 
 const GOOD_RELATIONSHIPS: [&'static str; 83] = [
     "Maps to",
@@ -89,24 +102,38 @@ const GOOD_RELATIONSHIPS: [&'static str; 83] = [
     "Before"
 ];
 
-#[tokio::main]
-async fn main() -> Result<(), sqlx::Error> {
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect("postgres://postgres:password@localhost:5432/omop").await?;
-
-    let relationships: Vec<RelationshipDetails> = sqlx::query_as::<_,RelationshipDetails>(
+async fn query_relationships(
+    State(state): State<Arc<AppState>>,
+    Path((starting_concept, max_depth)): Path<(i64, i64)>,
+) -> Json<Vec<RelationshipDetails>> {
+    let result: Vec<RelationshipDetails> = sqlx::query_as::<_,RelationshipDetails>(
         recursive_relationships::QUERY
     )
-        .bind(618919_i64)
-        .bind(2_i64)
+        .bind(starting_concept)
+        .bind(max_depth)
         .bind(GOOD_RELATIONSHIPS)
-        .fetch_all(&pool).await?;
+        .fetch_all(&state.pool)
+        .await
+        .expect("Error in querying the database");
+    
+    Json(result)
+}
 
-    println!("Fetched {:?} entries", &relationships.len());
+#[tokio::main]
+async fn main() {
+    let pool = PgPoolOptions::new()
+        .max_connections(5)
+        .connect("postgres://postgres:password@localhost:5432/omop")
+        .await
+        .expect("Error connecting to database");
 
-    for relationship in relationships {
-        println!("{:?}", &relationship)
-    };
-    Ok(())
+    let state = Arc::new(AppState {pool});
+
+    let app = Router::new()
+        .route("/recursive_relationships/:starting_concept/:max_depth", get(query_relationships))
+        .with_state(state);
+        
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+
+    axum::serve(listener, app).await.unwrap();
 }
