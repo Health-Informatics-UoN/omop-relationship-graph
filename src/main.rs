@@ -1,6 +1,8 @@
 use sqlx::postgres::PgPoolOptions;
 mod recursive_relationships;
 use recursive_relationships::RelationshipDetails;
+mod graph_conversion;
+use graph_conversion::{rows_to_graph, OMOPGraph};
 
 use axum::{
     routing::get,
@@ -8,7 +10,6 @@ use axum::{
     extract::{State, Path},
     Json,
 };
-use std::net::SocketAddr;
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -105,8 +106,8 @@ const GOOD_RELATIONSHIPS: [&'static str; 83] = [
 async fn query_relationships(
     State(state): State<Arc<AppState>>,
     Path((starting_concept, max_depth)): Path<(i64, i64)>,
-) -> Json<Vec<RelationshipDetails>> {
-    let result: Vec<RelationshipDetails> = sqlx::query_as::<_,RelationshipDetails>(
+) -> Json<OMOPGraph> {
+    let relationships: Vec<RelationshipDetails> = sqlx::query_as::<_,RelationshipDetails>(
         recursive_relationships::QUERY
     )
         .bind(starting_concept)
@@ -116,6 +117,8 @@ async fn query_relationships(
         .await
         .expect("Error in querying the database");
     
+    let result = rows_to_graph(relationships);
+
     Json(result)
 }
 

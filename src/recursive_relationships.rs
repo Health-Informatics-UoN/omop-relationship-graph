@@ -1,5 +1,3 @@
-use serde::Serialize;
-
 pub const QUERY: &str = "
         WITH RECURSIVE concept_hierarchy AS (
             -- Base case
@@ -10,7 +8,7 @@ pub const QUERY: &str = "
             cr.relationship_id,
             cr.concept_id_2 AS related_concept_id,
             rc.concept_name AS related_concept_name,
-            1 AS level,
+1 AS level,
             ARRAY[c.concept_id] AS visited_concepts
         FROM 
             cdm.concept c
@@ -62,11 +60,11 @@ pub const QUERY: &str = "
 
 #[derive(sqlx::FromRow, Debug, serde::Serialize)]
 pub struct RelationshipDetails {
-    concept_id: i32,
-    concept_name: String,
-    related_concept_id: i32,
-    related_concept_name: String,
-    standard_concept: Option<String>,
-    relationship_id: String,
+    pub concept_id: i32,
+    pub concept_name: String,
+    pub related_concept_id: i32,
+    pub related_concept_name: String,
+    pub standard_concept: Option<String>,
+    pub relationship_id: String,
     level: i32,
 }
