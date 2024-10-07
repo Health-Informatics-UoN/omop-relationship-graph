@@ -1,0 +1,8 @@
+[package]
+name = "omop-relationship-graph"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sqlx = { version = "0.8", features = [ "runtime-tokio", "postgres" ] }
+tokio = { version = "1.40.0", features = ["full"] }
