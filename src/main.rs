@@ -104,12 +104,12 @@ const GOOD_RELATIONSHIPS: [&'static str; 83] = [
     "Before"
 ];
 
-async fn query_relationships(
+async fn query_limited_relationships(
     State(state): State<Arc<AppState>>,
     Path((starting_concept, max_depth)): Path<(i64, i64)>,
 ) -> Json<OMOPGraph> {
     let relationships: Vec<RelationshipDetails> = sqlx::query_as::<_,RelationshipDetails>(
-        recursive_relationships::QUERY
+        recursive_relationships::QUERY_LIMITED_RELATIONSHIPS
     )
         .bind(starting_concept)
         .bind(max_depth)
@@ -118,6 +118,25 @@ async fn query_relationships(
         .await
         .expect("Error in querying the database");
     
+    let result = rows_to_graph(relationships);
+
+    Json(result)
+}
+
+// Yes, this should be one function with an argument as to whether to limit the relationships, I just can't be bothered to figure out routing nicely
+async fn query_all_relationships(
+    State(state): State<Arc<AppState>>,
+    Path((starting_concept, max_depth)): Path<(i64, i64)>,
+) -> Json<OMOPGraph> {
+    let relationships: Vec<RelationshipDetails> = sqlx::query_as::<_,RelationshipDetails>(
+        recursive_relationships::QUERY_ALL_RELATIONSHIPS
+    )
+        .bind(starting_concept)
+        .bind(max_depth)
+        .fetch_all(&state.pool)
+        .await
+        .expect("Error in querying the database");
+
     let result = rows_to_graph(relationships);
 
     Json(result)
@@ -134,7 +153,8 @@ async fn main() {
     let state = Arc::new(AppState {pool});
 
     let app = Router::new()
-        .route("/recursive_relationships/:starting_concept/:max_depth", get(query_relationships))
+        .route("/recursive_relationships_limited/:starting_concept/:max_depth", get(query_limited_relationships))
+        .route("/recursive_all_relationships/:starting_concept/:max_depth", get(query_all_relationships))
         .layer(CorsLayer::permissive())
         .with_state(state);
         
