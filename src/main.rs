@@ -108,6 +108,7 @@ async fn query_limited_relationships(
     State(state): State<Arc<AppState>>,
     Path((starting_concept, max_depth)): Path<(i64, i64)>,
 ) -> Json<OMOPGraph> {
+    println!("Querying database with starting concept {:?} to max depth of {:?}", &starting_concept, &max_depth);
     let relationships: Vec<RelationshipDetails> = sqlx::query_as::<_,RelationshipDetails>(
         recursive_relationships::QUERY_LIMITED_RELATIONSHIPS
     )
@@ -117,8 +118,10 @@ async fn query_limited_relationships(
         .fetch_all(&state.pool)
         .await
         .expect("Error in querying the database");
+    println!("Database returned {:?} relationships", &relationships.len());
     
     let result = rows_to_graph(relationships);
+    println!("Converted relationships to graph");
 
     Json(result)
 }
@@ -128,6 +131,7 @@ async fn query_all_relationships(
     State(state): State<Arc<AppState>>,
     Path((starting_concept, max_depth)): Path<(i64, i64)>,
 ) -> Json<OMOPGraph> {
+    println!("Querying database with starting concept {:?} to max depth of {:?}", &starting_concept, &max_depth);
     let relationships: Vec<RelationshipDetails> = sqlx::query_as::<_,RelationshipDetails>(
         recursive_relationships::QUERY_ALL_RELATIONSHIPS
     )
@@ -136,8 +140,10 @@ async fn query_all_relationships(
         .fetch_all(&state.pool)
         .await
         .expect("Error in querying the database");
+    println!("Database returned {:?} relationships", &relationships.len());
 
     let result = rows_to_graph(relationships);
+    println!("Converted relationships to graph");
 
     Json(result)
 }
