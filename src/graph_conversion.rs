@@ -26,11 +26,14 @@ fn get_nodes(relationships: &Vec<RelationshipDetails>) -> Vec<OMOPNode> {
     let mut result = Vec::new();
 
     for rel in relationships {
+        // If I were smarter and less lazy, I would make it so only the related concepts are
+        // checked because apart from the starting concept, all of the concept_id are going to be
+        // in the related concepts anyway. This would make it ~2x faster TODO?
         if seen.insert(rel.concept_id) {
             result.push(OMOPNode {
                 id: rel.concept_id.clone(),
                 name: rel.concept_name.clone(),
-                standard_concept: None,
+                standard_concept: rel.standard_concept.clone(),
             })
         };
         if seen.insert(rel.related_concept_id) {
@@ -38,7 +41,7 @@ fn get_nodes(relationships: &Vec<RelationshipDetails>) -> Vec<OMOPNode> {
                 OMOPNode {
                     id: rel.related_concept_id.clone(),
                     name: rel.related_concept_name.clone(),
-                    standard_concept: rel.standard_concept.clone(),
+                    standard_concept: rel.related_standard_concept.clone(),
                 }
             )
         }

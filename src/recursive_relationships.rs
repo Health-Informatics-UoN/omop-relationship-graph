@@ -8,7 +8,8 @@ pub const QUERY: &str = "
             cr.relationship_id,
             cr.concept_id_2 AS related_concept_id,
             rc.concept_name AS related_concept_name,
-1 AS level,
+            rc.standard_concept AS related_standard_concept,
+            1 AS level,
             ARRAY[c.concept_id] AS visited_concepts
         FROM 
             cdm.concept c
@@ -29,6 +30,7 @@ pub const QUERY: &str = "
             cr.relationship_id,
             cr.concept_id_2 AS related_concept_id,
             next_c.concept_name AS related_concept_name,
+            next_c.standard_concept AS related_standard_concept,
             ch.level + 1 AS level,
             ch.visited_concepts || rc.concept_id
         FROM 
@@ -51,6 +53,7 @@ pub const QUERY: &str = "
             related_concept_id,
             related_concept_name,
             standard_concept,
+            related_standard_concept,
             relationship_id,
             level
         FROM 
@@ -65,6 +68,7 @@ pub struct RelationshipDetails {
     pub related_concept_id: i32,
     pub related_concept_name: String,
     pub standard_concept: Option<String>,
+    pub related_standard_concept: Option<String>,
     pub relationship_id: String,
     level: i32,
 }
