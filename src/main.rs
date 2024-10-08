@@ -1,3 +1,4 @@
+use std::env;
 use sqlx::postgres::PgPoolOptions;
 mod recursive_relationships;
 use recursive_relationships::RelationshipDetails;
@@ -150,9 +151,18 @@ async fn query_all_relationships(
 
 #[tokio::main]
 async fn main() {
+    dotenvy::dotenv().expect("Couldn't read a .env file");
+    let db_url = format!(
+        "postgres://{}:{}@{}:{}/{}",
+        env::var("DB_USER").expect("Couldn't read DB_USER"),
+        env::var("DB_PASSWORD").expect("Couldn't read DB_PASSWORD"),
+        env::var("DB_HOST").expect("Couldn't read DB_HOST"),
+        env::var("DB_PORT").expect("Couldn't read DB_PORT"),
+        env::var("DB_NAME").expect("Couldn't read DB_NAME")
+        );
     let pool = PgPoolOptions::new()
         .max_connections(5)
-        .connect("postgres://postgres:password@localhost:5432/omop")
+        .connect(&db_url)
         .await
         .expect("Error connecting to database");
 
